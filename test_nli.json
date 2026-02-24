@@ -1,0 +1,38 @@
+[
+  {
+    "input": "我们要开放市场 [SEP] 我们要保守传统",
+    "result": [
+      {
+        "label": "CONTRADICTION",
+        "score": 0.9999017715454102
+      }
+    ]
+  },
+  {
+    "input": "公司要快速发展 [SEP] 公司要稳健经营",
+    "result": [
+      {
+        "label": "CONTRADICTION",
+        "score": 0.996925413608551
+      }
+    ]
+  },
+  {
+    "input": "员工要努力奋斗 [SEP] 员工要享受生活",
+    "result": [
+      {
+        "label": "CONTRADICTION",
+        "score": 0.9986169338226318
+      }
+    ]
+  },
+  {
+    "input": "应该进攻 [SEP] 应该防守",
+    "result": [
+      {
+        "label": "CONTRADICTION",
+        "score": 0.9996592998504639
+      }
+    ]
+  }
+]

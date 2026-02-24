@@ -86,7 +86,7 @@ contradiction_detection:
   max_length: 256
   
   # 矛盾阈值
-  confidence_threshold: 0.7
+  confidence_threshold: 0.5
   
   # 对立概念词对（用于匹配候选句对）
   paradox_pairs:

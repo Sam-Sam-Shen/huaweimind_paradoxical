@@ -125,8 +125,7 @@ class ContradictionDetector:
                 )
                 model = AutoModelForSequenceClassification.from_pretrained(
                     model_dir,
-                    trust_remote_code=True,
-                    use_safetensors=True  # 使用safetensors格式避免torch.load安全问题
+                    trust_remote_code=True
                 )
                 
                 # 构建pipeline
@@ -192,31 +191,34 @@ class ContradictionDetector:
             ],
         )
         
-        # 构建正则模式
-        patterns = []
+        # 构建关键词集合（不要求同一句子包含两个词）
+        all_keywords = set()
         for pair in paradox_pairs:
             if len(pair) >= 2:
-                pattern = f".*{pair[0]}.*{pair[1]}.*|.*{pair[1]}.*{pair[0]}.*"
-                patterns.append((re.compile(pattern), pair))
+                all_keywords.update(pair)
         
         candidate_pairs = []
         
         for doc in tqdm(documents, desc="生成候选句对"):
             sentences = self.extract_sentences(doc["content"])
             
-            # 找出包含悖论关键词的句子
+            # 找出包含任意悖论关键词的句子
             paradox_sentences = []
             for idx, sent in enumerate(sentences):
-                for pattern, pair in patterns:
-                    if pattern.search(sent):
-                        paradox_sentences.append((idx, sent, pair))
+                for keyword in all_keywords:
+                    if keyword in sent:
+                        paradox_sentences.append((idx, sent, keyword))
                         break
             
-            # 生成句子对
-            for i, (idx1, sent1, _) in enumerate(paradox_sentences):
-                for idx2, sent2, _ in paradox_sentences[i+1:]:
-                    # 避免重复对
-                    if abs(idx1 - idx2) < 3:  # 至少隔3句
+            # 生成句子对（来自不同句子）
+            for i, (idx1, sent1, kw1) in enumerate(paradox_sentences):
+                for idx2, sent2, kw2 in paradox_sentences[i+1:]:
+                    # 避免重复对（同一句子）
+                    if idx1 == idx2:
+                        continue
+                    
+                    # 至少隔1句
+                    if abs(idx1 - idx2) < 1:
                         continue
                     
                     # 随机选择顺序
@@ -435,11 +437,10 @@ def run_contradiction_detection() -> dict[str, Any]:
     # 生成候选对并检测
     logger.info("开始矛盾检测流程...")
     
-    # 使用更多样本（增加到100篇，或全部文档）
+    # 使用所有文档进行矛盾检测
     logger.info(f"总文档数: {len(documents)}")
-    sample_size = min(100, len(documents))
-    sample_docs = documents[:sample_size]
-    logger.info(f"采样文档数: {sample_size}")
+    sample_docs = documents  # 使用所有文档
+    logger.info(f"处理文档数: {len(sample_docs)}")
     
     candidate_pairs = detector.generate_candidate_pairs(sample_docs)
     logger.info(f"生成候选句对数: {len(candidate_pairs)}")
@@ -476,7 +477,9 @@ def run_contradiction_detection() -> dict[str, Any]:
         logger.info(f"随机采样候选对数: {len(candidate_pairs)}")
     
     # 检测矛盾
-    contradictions = detector.detect_contradictions(candidate_pairs)
+    threshold = get_config().get("contradiction_detection.confidence_threshold", 0.5)
+    logger.info(f"使用矛盾检测阈值: {threshold}")
+    contradictions = detector.detect_contradictions(candidate_pairs, threshold=threshold)
     
     # 保存结果
     output_dir = get_config().get_path("contradictions_dir")
