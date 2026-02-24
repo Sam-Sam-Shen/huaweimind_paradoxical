@@ -42,3 +42,7 @@ Thumbs.db
 ## 项目特定
 huawei/**/*.md
 !huawei/.gitkeep
+
+## 模型文件
+models/
+!models/.gitkeep

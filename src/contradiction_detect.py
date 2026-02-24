@@ -67,7 +67,16 @@ class ContradictionDetector:
         self.config = get_config()
         self._nli_pipeline = None
         self._device = "cpu"  # 无GPU时使用CPU
-        
+        self._model_cache_dir = self._get_model_cache_dir()
+    
+    def _get_model_cache_dir(self) -> str:
+        """获取模型缓存目录（项目目录下）"""
+        from .utils import get_project_root
+        cache_dir = get_project_root() / "models"
+        cache_dir.mkdir(exist_ok=True)
+        logger.info(f"模型缓存目录: {cache_dir}")
+        return str(cache_dir)
+    
     @property
     def nli_pipeline(self):
         """获取NLI管道"""
@@ -78,18 +87,36 @@ class ContradictionDetector:
             )
             
             logger.info(f"加载NLI模型 (ModelScope): {model_name}")
+            logger.info(f"模型将保存到: {self._model_cache_dir}")
             
             # 使用ModelScope加载模型
             try:
                 from modelscope import AutoModelForSequenceClassification, AutoTokenizer
+                from modelscope.hub.api import HubApi
                 
-                tokenizer = AutoTokenizer.from_pretrained(
-                    model_name, 
+                # 登录（公共模型不需要token）
+                api = HubApi()
+                
+                # 下载模型到指定目录（带进度显示）
+                logger.info("开始下载模型...")
+                from modelscope.hub.snapshot_download import snapshot_download
+                
+                model_dir = snapshot_download(
+                    model_name,
+                    cache_dir=self._model_cache_dir,
                     revision='v1.0'
                 )
+                
+                logger.info(f"模型已下载到: {model_dir}")
+                
+                # 从本地加载
+                tokenizer = AutoTokenizer.from_pretrained(
+                    model_dir,
+                    trust_remote_code=True
+                )
                 model = AutoModelForSequenceClassification.from_pretrained(
-                    model_name, 
-                    revision='v1.0'
+                    model_dir,
+                    trust_remote_code=True
                 )
                 
                 # 构建pipeline
@@ -107,14 +134,15 @@ class ContradictionDetector:
                 
                 logger.info("NLI模型加载完成 (ModelScope)")
                 
-            except ImportError:
+            except ImportError as e:
                 # 如果ModelScope未安装，回退到transformers
-                logger.warning("ModelScope未安装，回退到transformers")
+                logger.warning(f"ModelScope加载失败，回退到transformers: {e}")
                 from transformers import pipeline
                 
                 self._nli_pipeline = pipeline(
                     "text-classification",
                     model=model_name,
+                    cache_dir=self._model_cache_dir,
                     device=-1,
                     truncation=True,
                     max_length=self.config.get(
