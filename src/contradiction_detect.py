@@ -432,22 +432,47 @@ def run_contradiction_detection() -> dict[str, Any]:
     detector = ContradictionDetector()
     
     # 生成候选对并检测
-    # 注意：由于无GPU，这里简化处理
-    # 实际上可以先用规则筛选候选对，再小批量检测
-    
     logger.info("开始矛盾检测流程...")
     
-    # 为演示，这里生成少量候选对
-    sample_docs = documents[:10]  # 限制样本
+    # 使用更多样本（增加到100篇，或全部文档）
+    logger.info(f"总文档数: {len(documents)}")
+    sample_size = min(100, len(documents))
+    sample_docs = documents[:sample_size]
+    logger.info(f"采样文档数: {sample_size}")
     
     candidate_pairs = detector.generate_candidate_pairs(sample_docs)
+    logger.info(f"生成候选句对数: {len(candidate_pairs)}")
     
-    # 如果候选对太多，随机采样
+    # 如果没有候选对，创建一些测试对来加载模型
+    if len(candidate_pairs) == 0:
+        logger.warning("未找到包含悖论关键词的句子对，使用全部句子进行测试...")
+        # 使用前几篇文档的全部句子
+        for doc in sample_docs[:3]:
+            sentences = detector.extract_sentences(doc["content"])
+            for i in range(min(5, len(sentences)-1)):
+                candidate_pairs.append(SentencePair(
+                    premise=sentences[i],
+                    hypothesis=sentences[i+1],
+                    premise_idx=i,
+                    hypothesis_idx=i+1,
+                    doc_id=doc["id"],
+                    doc_title=doc["title"],
+                    year=doc["year"],
+                ))
+        logger.info(f"使用测试候选句对数: {len(candidate_pairs)}")
+    
+    # 预加载模型（确保下载并显示进度）
+    logger.info("预加载NLI模型...")
+    _ = detector.nli_pipeline
+    logger.info("模型已加载")
+    
+    # 限制最大候选对数量
     max_pairs = 100
     if len(candidate_pairs) > max_pairs:
         import random
         random.seed(42)
         candidate_pairs = random.sample(candidate_pairs, max_pairs)
+        logger.info(f"随机采样候选对数: {len(candidate_pairs)}")
     
     # 检测矛盾
     contradictions = detector.detect_contradictions(candidate_pairs)
