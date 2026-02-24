@@ -67,15 +67,12 @@ class ContradictionDetector:
         self.config = get_config()
         self._nli_pipeline = None
         self._device = "cpu"  # 无GPU时使用CPU
-        self._model_cache_dir = self._get_model_cache_dir()
-    
-    def _get_model_cache_dir(self) -> str:
-        """获取模型缓存目录（项目目录下）"""
-        from .utils import get_project_root
-        cache_dir = get_project_root() / "models"
-        cache_dir.mkdir(exist_ok=True)
-        logger.info(f"模型缓存目录: {cache_dir}")
-        return str(cache_dir)
+        # 获取项目根目录并创建models目录
+        import os
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self._model_cache_dir = os.path.join(project_root, "models")
+        os.makedirs(self._model_cache_dir, exist_ok=True)
+        logger.info(f"模型缓存目录: {self._model_cache_dir}")
     
     @property
     def nli_pipeline(self):
@@ -86,20 +83,23 @@ class ContradictionDetector:
                 "Fengshenbang/Erlangshen-RoBERTa-330M-NLI",
             )
             
-            logger.info(f"加载NLI模型 (ModelScope): {model_name}")
-            logger.info(f"模型将保存到: {self._model_cache_dir}")
+            logger.info(f"=" * 50)
+            logger.info(f"开始加载NLI模型")
+            logger.info(f"模型名称: {model_name}")
+            logger.info(f"缓存目录: {self._model_cache_dir}")
+            logger.info(f"=" * 50)
             
             # 使用ModelScope加载模型
             try:
+                import modelscope
+                logger.info("使用ModelScope加载模型...")
+                
                 from modelscope import AutoModelForSequenceClassification, AutoTokenizer
-                from modelscope.hub.api import HubApi
                 
-                # 登录（公共模型不需要token）
-                api = HubApi()
-                
-                # 下载模型到指定目录（带进度显示）
-                logger.info("开始下载模型...")
+                # 使用snapshot_download下载模型到指定目录
                 from modelscope.hub.snapshot_download import snapshot_download
+                
+                logger.info("正在从ModelScope下载模型（首次下载可能需要几分钟）...")
                 
                 model_dir = snapshot_download(
                     model_name,
@@ -107,9 +107,18 @@ class ContradictionDetector:
                     revision='v1.0'
                 )
                 
-                logger.info(f"模型已下载到: {model_dir}")
+                logger.info(f"模型下载完成，路径: {model_dir}")
+                
+                # 列出下载的文件
+                import os
+                logger.info("下载的文件:")
+                for f in os.listdir(model_dir):
+                    fpath = os.path.join(model_dir, f)
+                    size = os.path.getsize(fpath) / (1024*1024)  # MB
+                    logger.info(f"  - {f} ({size:.1f} MB)")
                 
                 # 从本地加载
+                logger.info("加载模型到内存...")
                 tokenizer = AutoTokenizer.from_pretrained(
                     model_dir,
                     trust_remote_code=True
@@ -132,24 +141,32 @@ class ContradictionDetector:
                     ),
                 )
                 
-                logger.info("NLI模型加载完成 (ModelScope)")
+                logger.info("NLI模型加载完成!")
+                logger.info(f"模型目录: {model_dir}")
                 
-            except ImportError as e:
-                # 如果ModelScope未安装，回退到transformers
-                logger.warning(f"ModelScope加载失败，回退到transformers: {e}")
-                from transformers import pipeline
+            except Exception as e:
+                logger.error(f"ModelScope加载失败: {e}")
+                logger.info("尝试使用transformers...")
                 
-                self._nli_pipeline = pipeline(
-                    "text-classification",
-                    model=model_name,
-                    cache_dir=self._model_cache_dir,
-                    device=-1,
-                    truncation=True,
-                    max_length=self.config.get(
-                        "contradiction_detection.max_length", 256
-                    ),
-                )
-                logger.info("NLI模型加载完成 (transformers)")
+                # 回退到transformers
+                try:
+                    from transformers import pipeline
+                    
+                    self._nli_pipeline = pipeline(
+                        "text-classification",
+                        model=model_name,
+                        cache_dir=self._model_cache_dir,
+                        device=-1,
+                        truncation=True,
+                        max_length=self.config.get(
+                            "contradiction_detection.max_length", 256
+                        ),
+                    )
+                    logger.info("transformers模型加载完成")
+                    
+                except Exception as e2:
+                    logger.error(f"transformers也加载失败: {e2}")
+                    raise
         
         return self._nli_pipeline
     
