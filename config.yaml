@@ -72,12 +72,12 @@ topic_modeling:
     - "type"  # 文档类型（讲话/采访/文章）
 
 contradiction_detection:
-  # NLI模型（中文支持）
-  # 注意：无GPU时使用轻量模型
-  model_name: "MoritzLaurer/multilingual-MiniLMv12-xsmall-v2"
+  # NLI模型 - 使用ModelScope中文模型
+  # ModelScope: Fengshenbang/Erlangshen-RoBERTa-330M-NLI
+  model_name: "Fengshenbang/Erlangshen-RoBERTa-330M-NLI"
   
-  # 备选模型（更精确但更慢）
-  # model_name: "uer/roberta-base-finetuned-chinese-xnli"
+  # HuggingFace备选（需要VPN或镜像）
+  # model_name: "MoritzLaurer/multilingual-MiniLMv12-xsmall-v2"
   
   # 批处理大小
   batch_size: 8

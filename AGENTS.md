@@ -63,6 +63,9 @@ conda install -c pytorch pytorch torchvision cpuonly -y
 
 # 安装其他依赖 (pip)
 pip install transformers tokenizers sentencepiece pyLDAvis wordcloud markdown jinja2 weasyprint
+
+# 安装ModelScope (用于下载中文NLI模型)
+pip install modelscope
 ```
 
 ### 方式二：使用Virtualenv（备选）
@@ -290,7 +293,7 @@ topic_modeling:
 
 # 矛盾检测
 contradiction_detection:
-  model_name: "MoritzLaurer/multilingual-MiniLMv12-xsmall-v2"  # NLI模型
+  model_name: "Fengshenbang/Erlangshen-RoBERTa-330M-NLI"  # ModelScope中文NLI模型
   confidence_threshold: 0.7  # 置信度阈值
 
 # 悖论词对（用于矛盾检测和词向量分析）

@@ -74,23 +74,54 @@ class ContradictionDetector:
         if self._nli_pipeline is None:
             model_name = self.config.get(
                 "contradiction_detection.model_name",
-                "MoritzLaurer/multilingual-MiniLMv12-xsmall-v2",
+                "Fengshenbang/Erlangshen-RoBERTa-330M-NLI",
             )
             
-            logger.info(f"加载NLI模型: {model_name}")
+            logger.info(f"加载NLI模型 (ModelScope): {model_name}")
             
-            # 使用CPU
-            self._nli_pipeline = pipeline(
-                "text-classification",
-                model=model_name,
-                device=-1,  # CPU
-                truncation=True,
-                max_length=self.config.get(
-                    "contradiction_detection.max_length", 256
-                ),
-            )
-            
-            logger.info("NLI模型加载完成")
+            # 使用ModelScope加载模型
+            try:
+                from modelscope import AutoModelForSequenceClassification, AutoTokenizer
+                
+                tokenizer = AutoTokenizer.from_pretrained(
+                    model_name, 
+                    revision='v1.0'
+                )
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    model_name, 
+                    revision='v1.0'
+                )
+                
+                # 构建pipeline
+                from transformers import pipeline
+                self._nli_pipeline = pipeline(
+                    "text-classification",
+                    model=model,
+                    tokenizer=tokenizer,
+                    device=-1,  # CPU
+                    truncation=True,
+                    max_length=self.config.get(
+                        "contradiction_detection.max_length", 256
+                    ),
+                )
+                
+                logger.info("NLI模型加载完成 (ModelScope)")
+                
+            except ImportError:
+                # 如果ModelScope未安装，回退到transformers
+                logger.warning("ModelScope未安装，回退到transformers")
+                from transformers import pipeline
+                
+                self._nli_pipeline = pipeline(
+                    "text-classification",
+                    model=model_name,
+                    device=-1,
+                    truncation=True,
+                    max_length=self.config.get(
+                        "contradiction_detection.max_length", 256
+                    ),
+                )
+                logger.info("NLI模型加载完成 (transformers)")
         
         return self._nli_pipeline
     

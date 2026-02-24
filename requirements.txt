@@ -8,11 +8,14 @@ scipy>=1.10.0
 gensim>=4.3.0
 scikit-learn>=1.3.0
 
-# Deep Learning & NLP (CPU version)
+# Deep Learning & NLP
 torch>=2.0.0
 transformers>=4.30.0
 tokenizers>=0.13.0
 sentencepiece>=0.1.99
+
+# ModelScope (中文模型下载)
+modelscope>=1.9.0
 
 # Visualization
 matplotlib>=3.7.0
