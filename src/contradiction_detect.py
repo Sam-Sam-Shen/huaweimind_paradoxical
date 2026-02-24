@@ -125,7 +125,8 @@ class ContradictionDetector:
                 )
                 model = AutoModelForSequenceClassification.from_pretrained(
                     model_dir,
-                    trust_remote_code=True
+                    trust_remote_code=True,
+                    use_safetensors=True  # 使用safetensors格式避免torch.load安全问题
                 )
                 
                 # 构建pipeline
