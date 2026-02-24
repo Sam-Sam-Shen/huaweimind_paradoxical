@@ -104,7 +104,7 @@ class ContradictionDetector:
                 model_dir = snapshot_download(
                     model_name,
                     cache_dir=self._model_cache_dir,
-                    revision='v1.0'
+                    revision='v1.0.0'
                 )
                 
                 logger.info(f"模型下载完成，路径: {model_dir}")
