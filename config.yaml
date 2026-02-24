@@ -1,0 +1,199 @@
+# 配置文件 - 任正非管理思想悖论分析
+
+project:
+  name: "华为思维悖论分析"
+  version: "1.0.0"
+  description: "基于STM和BERT的任正非管理思想悖论性分析"
+
+paths:
+  # 源数据目录
+  source_dir: "huawei"
+  # 输出目录
+  data_dir: "data"
+  results_dir: "results"
+  notebooks_dir: "notebooks"
+  
+  # 数据文件
+  corpus_file: "data/corpus.json"
+  metadata_file: "data/metadata.json"
+  processed_file: "data/processed_corpus.json"
+  
+  # 结果文件
+  topics_dir: "results/topics"
+  contradictions_dir: "results/contradictions"
+  figures_dir: "results/figures"
+  report_file: "results/analysis_report.md"
+
+preprocessing:
+  # 中文分词
+  tokenizer: "jieba"
+  
+  # 停用词
+  stopwords:
+    - "data/stopwords_cn.txt"
+    - "data/stopwords_common.txt"
+  
+  # 最小词长
+  min_word_length: 2
+  
+  # 是否去除数字
+  remove_numbers: true
+  
+  # 是否去除标点
+  remove_punctuation: true
+  
+  # 最小文档词数
+  min_doc_words: 50
+
+topic_modeling:
+  # 主题数量范围
+  topic_range:
+    min: 10
+    max: 50
+    step: 5
+  
+  # 推荐主题数
+  num_topics: 25
+  
+  # 模型类型
+  model_type: "lda"  # lda, nmf, ctm
+  
+  # 超参数
+  alpha: "auto"
+  eta: "auto"
+  
+  # 迭代次数
+  passes: 10
+  iterations: 500
+  
+  # 元数据协变量（用于分析主题与时间的关系）
+  covariates:
+    - "year"  # 年份
+    - "type"  # 文档类型（讲话/采访/文章）
+
+contradiction_detection:
+  # NLI模型（中文支持）
+  # 注意：无GPU时使用轻量模型
+  model_name: "MoritzLaurer/multilingual-MiniLMv12-xsmall-v2"
+  
+  # 备选模型（更精确但更慢）
+  # model_name: "uer/roberta-base-finetuned-chinese-xnli"
+  
+  # 批处理大小
+  batch_size: 8
+  
+  # 最大序列长度
+  max_length: 256
+  
+  # 矛盾阈值
+  confidence_threshold: 0.7
+  
+  # 对立概念词对（用于匹配候选句对）
+  paradox_pairs:
+    - ["开放", "保守"]
+    - ["激进", "稳健"]
+    - ["集权", "放权"]
+    - ["扩张", "收缩"]
+    - ["进攻", "防守"]
+    - ["创新", "守成"]
+    - ["自主", "引进"]
+    - ["全球化", "本土化"]
+    - ["利润", "规模"]
+    - ["奋斗", "享受"]
+
+word_embedding:
+  # 嵌入维度
+  embedding_dim: 100
+  
+  # 词向量模型
+  model_type: "word2vec"  # word2vec, fasttext
+  
+  # 窗口大小
+  window: 5
+  
+  # 最小词频
+  min_count: 5
+  
+  # 训练轮数
+  epochs: 20
+  
+  # 悖论词对分析
+  paradox_word_pairs:
+    - ["开放", "保守"]
+    - ["激进", "稳健"]
+    - ["集权", "放权"]
+    - ["个人英雄", "群体英雄"]
+    - ["利润", "规模"]
+    - ["进攻", "防守"]
+
+visualization:
+  # 图表风格
+  style: "seaborn-v0_8-darkgrid"
+  
+  # 图表尺寸
+  figure_size: [12, 8]
+  
+  # 字体（中文支持）
+  font: "SimHei"
+  
+  # 图表格式
+  formats: ["png", "svg"]
+  
+  # DPI
+  dpi: 300
+
+report:
+  # 报告语言
+  language: "zh-CN"
+  
+  # 包含章节
+  sections:
+    - "executive_summary"
+    - "methodology"
+    - "topic_analysis"
+    - "contradiction_analysis"
+    - "word_embedding_analysis"
+    - "visualizations"
+    - "conclusions"
+  
+  # 输出格式
+  output_formats:
+    - "markdown"
+    - "pdf"
+  
+  # 图表嵌入
+  embed_figures: true
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/analysis.log"
+
+# 运行模式配置
+run_modes:
+  # 完整分析流程
+  full:
+    - preprocess
+    - topic_modeling
+    - contradiction_detection
+    - word_embedding
+    - visualize
+    - report
+  
+  # 仅预处理
+  preprocess_only:
+    - preprocess
+  
+  # 仅主题建模
+  topic_only:
+    - preprocess
+    - topic_modeling
+  
+  # 仅矛盾检测
+  contradiction_only:
+    - preprocess
+    - contradiction_detection
+  
+  # 仅可视化
+  visualize_only:
+    - visualize

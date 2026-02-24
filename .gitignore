@@ -1,7 +1,44 @@
+# 任正非思维悖论分析项目
 
+## Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+## 数据文件
+data/*.json
+!data/.gitkeep
+
+## 结果文件
+results/**/*.json
+results/**/*.png
+results/**/*.svg
+!results/.gitkeep
+
+## 日志
+logs/
+*.log
+
+## Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+## IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+## OS
 .DS_Store
-.vscode/settings.json
-huawei/.DS_Store
-huawei/2014/.DS_Store
-huawei/2023/.DS_Store
-huawei/任正非思想之路1994-2022汇编本/.DS_Store
+Thumbs.db
+
+## 项目特定
+huawei/**/*.md
+!huawei/.gitkeep
