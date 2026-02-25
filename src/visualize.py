@@ -31,20 +31,31 @@ class Visualizer:
     
     def _setup_style(self) -> None:
         """设置绘图风格"""
-        # 设置中文字体
-        try:
-            rcParams["font.sans-serif"] = ["SimHei", "DejaVu Sans", "Arial Unicode MS"]
-        except Exception:
-            pass
+        # 清除matplotlib字体缓存，强制重新加载
+        import matplotlib.font_manager as fm
+        fm._load_fontmanager(try_read_cache=False)
         
-        rcParams["axes.unicode_minus"] = False
-        
-        # 设置样式
+        # 设置样式（必须在字体设置之前，因为set_style会重置rcParams）
         style = self.config.get("visualization.style", "seaborn-v0_8-darkgrid")
         try:
             sns.set_style(style.split("-")[1] if "-" in style else "darkgrid")
         except Exception:
             sns.set_style("darkgrid")
+        
+        # 设置中文字体 - 优先使用文泉驿字体（必须在set_style之后设置）
+        try:
+            plt.rcParams["font.sans-serif"] = [
+                "WenQuanYi Micro Hei",
+                "WenQuanYi Zen Hei",
+                "SimHei",
+                "DejaVu Sans",
+                "Arial Unicode MS",
+            ]
+            plt.rcParams["font.family"] = "sans-serif"
+            plt.rcParams["axes.unicode_minus"] = False
+            logger.info("中文字体设置成功")
+        except Exception as e:
+            logger.warning(f"设置中文字体失败: {e}")
         
         # 设置尺寸
         self.fig_size = self.config.get("visualization.figure_size", [12, 8])

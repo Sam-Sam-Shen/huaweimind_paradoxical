@@ -65,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         help="仅生成报告",
     )
     parser.add_argument(
+        "--innovation",
+        action="store_true",
+        help="运行方法论创新分析（BERTopic, 语义网络, PII, DTM）",
+    )
+    parser.add_argument(
         "--n-topics",
         type=int,
         default=None,
@@ -205,6 +210,7 @@ def main() -> int:
         args.embedding,
         args.visualize,
         args.report,
+        args.innovation,
     ])
     
     if run_all:
@@ -239,6 +245,14 @@ def main() -> int:
         # 报告生成
         if args.report or run_all:
             results["report"] = run_report()
+        
+        # 方法论创新分析
+        if args.innovation:
+            from src.integrated_analysis import run_integrated_analysis
+            logger.info("=" * 50)
+            logger.info("运行方法论创新分析")
+            logger.info("=" * 50)
+            results["innovation"] = run_integrated_analysis()
         
         logger.info("=" * 50)
         logger.info("所有任务完成!")

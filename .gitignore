@@ -15,11 +15,10 @@ ENV/
 data/*.json
 !data/.gitkeep
 
-## 结果文件
-results/**/*.json
-results/**/*.png
-results/**/*.svg
+## 结果文件 - 忽略所有结果（包括HTML、模型、词云等）
+results/
 !results/.gitkeep
+!results/analysis_report.md  # 保留主要报告
 
 ## 日志
 logs/

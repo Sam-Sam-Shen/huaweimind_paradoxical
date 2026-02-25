@@ -339,7 +339,7 @@ class ReportGenerator:
             "",
             "### 1. 文档年份分布",
             "",
-            "![年份分布](results/figures/year_distribution.png)")
+            "![年份分布](results/figures/year_distribution.png)"
         ]
         
         # 添加其他图表
@@ -384,7 +384,7 @@ class ReportGenerator:
             "",
             "### 研究局限",
             "",
-            "- 样本仅限于公开文档，可能不完全反映内部决策过程")
+            "- 样本仅限于公开文档，可能不完全反映内部决策过程",
         ]
         
         lines.extend([
@@ -407,6 +407,10 @@ class ReportGenerator:
             import weasyprint
         except ImportError:
             logger.warning("weasyprint未安装，跳过PDF生成")
+            return ""
+        except OSError as e:
+            logger.warning(f"weasyprint依赖库缺失: {e}")
+            logger.info("仅生成Markdown报告，跳过PDF")
             return ""
         
         logger.info("生成PDF报告")

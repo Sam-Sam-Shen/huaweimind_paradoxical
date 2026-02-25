@@ -109,6 +109,40 @@ def save_json_safe(data: dict | list, filepath: str | Path, indent: int = 2) -> 
         return False
 
 
+def save_json(data: dict | list, filepath: str | Path, indent: int = 2) -> None:
+    """保存JSON文件（不安全版本，出错时抛出异常）"""
+    import json
+    ensure_dir(Path(filepath).parent)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=indent)
+
+
+def load_json_safe(filepath: str | Path, default: Any = None) -> Any:
+    """安全加载JSON文件，失败时返回默认值"""
+    import json
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
+
+
+def timer(func):
+    """装饰器：计算函数执行时间"""
+    import functools
+    import time
+    
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        logger = logging.getLogger(func.__module__)
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        elapsed = time.time() - start_time
+        logger.info(f"{func.__name__} 耗时: {elapsed:.2f}秒")
+        return result
+    return wrapper
+
+
 def format_size(size_bytes: float) -> str:
     """格式化文件大小"""
     for unit in ["B", "KB", "MB", "GB"]:

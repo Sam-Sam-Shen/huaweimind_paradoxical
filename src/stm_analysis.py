@@ -39,7 +39,7 @@ class TopicModeler:
     def train_lda(
         self,
         n_topics: int = 25,
-        max_iter: int = 500,
+        max_iter: int = 100,
     ) -> dict[str, Any]:
         """训练LDA模型"""
         logger.info(f"训练LDA模型，主题数: {n_topics}")
@@ -47,9 +47,10 @@ class TopicModeler:
         # 获取文档
         documents = [" ".join(doc["words"]) for doc in self.data["documents"]]
         
-        # 创建词袋模型
+        # 创建词袋模型 - 限制特征数量以提高性能
+        max_features = min(5000, len(self.data.get("vocab", {})))
         vectorizer = CountVectorizer(
-            max_features=len(self.data.get("vocab", {})),
+            max_features=max_features,
             min_df=5,
             max_df=0.8,
         )
@@ -57,7 +58,7 @@ class TopicModeler:
         dtm = vectorizer.fit_transform(documents)
         self.feature_names = vectorizer.get_feature_names_out().tolist()
         
-        # 训练LDA
+        # 训练LDA - 使用更快的参数
         lda_config = self.config.topic_modeling
         self.model = LatentDirichletAllocation(
             n_components=n_topics,
@@ -65,7 +66,7 @@ class TopicModeler:
             learning_method="online",
             learning_offset=50.0,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=1,  # 改为单线程避免问题
         )
         
         self.doc_topic_dist = self.model.fit_transform(dtm)
@@ -360,10 +361,22 @@ def run_topic_modeling(
     n_topics: int = 25,
 ) -> dict[str, Any]:
     """运行主题建模"""
-    from .preprocess import run_preprocessing
+    from .preprocess import ChinesePreprocessor
+    from .data_loader import DataLoader
+    from .utils import load_json_safe
+    from .config import get_config
     
-    # 预处理
-    processed = run_preprocessing()
+    # 直接从缓存加载预处理结果
+    config = get_config()
+    processed_file = config.get_path("processed_file")
+    processed = load_json_safe(processed_file)
+    
+    if not processed:
+        # 如果缓存不存在，则运行预处理
+        loader = DataLoader()
+        corpus = loader.load_all_documents()
+        preprocessor = ChinesePreprocessor()
+        processed = preprocessor.build_corpus(corpus)
     
     # 训练模型
     modeler = TopicModeler(processed)
